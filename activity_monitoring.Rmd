@@ -1,0 +1,338 @@
+---
+title: "MONITORING PERSONAL ACTIVITIES"
+author: "Andreia Vieira"
+date: "18/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+
+Evaluation of an individual's data collected at 5-minute intervals during the day, including the number of steps performed. Data were collected in 2012, during the months of October and November.
+
+
+#### Data characteristic
+
+Dataset: Activity Monitoring Data  (.CSV)
+(https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) [52K]
+Total: 17,568 observations  
+
+
+#### Variables:
+
+steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+date: The date on which the measurement was taken in YYYY-MM-DD format
+interval: Identifier for the 5-minute interval in which measurement was taken
+
+
+
+### Data analysis
+
+
+#### 1) Loading and/or preprocessing the data
+
+```{r}
+
+ library(ggplot2)
+ library(plyr)
+
+
+temp <- tempfile()
+download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",temp, mode="wb")
+unzip(temp, "activity.csv" )
+Activity_Monitoring <- read.csv("activity.csv", sep=",", header=TRUE)
+str(Activity_Monitoring)
+
+
+```
+###### Data clean and format
+
+```{r}
+data_clean_activity<-Activity_Monitoring[!is.na(Activity_Monitoring$steps),] #15264 obs. of  3 variables
+data_clean_activity <-data_clean_activity [order(data_clean_activity$interval),] # order
+data_clean_activity$date<- as.POSIXct(data_clean_activity$date, format="%Y-%m-%d") 
+str(data_clean_activity)
+
+
+```
+#### 2) Histogram of the total number of steps taken each day
+
+###### Sum steps
+
+```{r}
+
+sum_steps <- aggregate(data_clean_activity$steps ~ data_clean_activity$date, FUN=sum)
+colnames(sum_steps)<- c("date", "steps")
+sum_steps <-sum_steps [order(sum_steps$steps),] # order
+head(sum_steps,10)
+
+hist(sum_steps$steps, col="darkblue", border="black", xlab="Steps", main="Total Steps per Day")
+
+```
+
+#### 3) Average and median  - number of steps taken each Day
+
+###### Average obtain sum steps daily: mean and median
+```{r}
+
+mean_steps <- aggregate(data_clean_activity$steps ~ data_clean_activity$date, FUN=mean)
+colnames(mean_steps)<- c("date", "steps")
+#mean_steps # Average each day
+
+median_steps <- aggregate(data_clean_activity$steps ~ data_clean_activity$date, FUN=median)
+colnames(median_steps)<- c("date", "steps")
+#median_steps  # median each day
+
+
+# Average obtain sum steps daily
+
+mean_total_steps <- mean(sum_steps$steps)
+median_total_steps <- median(sum_steps$steps)
+mean_total_steps 
+median_total_steps 
+# mean 10766.19 and median 10765
+
+```
+###### Average steps to all interval
+
+```{r}
+
+mean_total_steps <- mean(data_clean_activity $steps) 
+mean_total_steps
+
+
+```
+
+
+#### 4) Time series plot of the average number of steps taken (daily)
+
+```{r}
+
+mean_steps_day <- aggregate(data_clean_activity$steps ~ data_clean_activity$date, FUN=mean)
+colnames(mean_steps_day)<- c("date", "steps")
+head(mean_steps_day,10)
+
+# Plot Time series  x=date
+
+ggplot(mean_steps, aes(x = date, y = steps) , xlab="Date" , ylab="Mean Steps") + geom_hline(yintercept=mean(mean_steps_day$steps ), col="red")+ geom_line() + ggtitle("Average Number of Steps per Date")
+
+```
+
+
+#### 5) The 5-minute interval that, on average, contains the maximum number of steps
+
+###### First Average Number of Steps per Interval. After interval that, on average, contains the maximum number of steps.
+```{r}
+
+mean_steps_interval_5min <- aggregate(data_clean_activity$steps ~ data_clean_activity$interval, FUN=mean)
+colnames(mean_steps_interval_5min)<- c("interval", "steps")
+head(mean_steps_interval_5min,10)
+
+
+# Plot Time series  x= 5-minute interval
+
+ggplot(mean_steps_interval_5min, aes(x = interval, y = steps) , xlab="Interval" , ylab="Mean Steps") + geom_line() + ggtitle("                  Average Number of Steps per Interval")
+
+
+
+```
+
+###### Maximum number of steps
+
+```{r}
+
+maxSteps_interval_order<-mean_steps_interval_5min[order(-mean_steps_interval_5min $steps, mean_steps_interval_5min $interval),]
+
+#maximum
+
+head(maxSteps_interval_order, n=1)
+
+#All interval
+head(maxSteps_interval_order,10) # all 
+
+
+# The interval that contains the maximum number of steps is 835.  In this interval, the average of steps was 206.1698
+
+```
+
+#### 6) Code to describe and show a strategy for imputing missing data
+
+###### The mean can distort the results due to the amount of outliers -  2304 records. So, the outliers will test by mean and mediana.  However, the substitution by the media presented a behavior similar to the clean data.
+
+###### Calculation of median
+```{r}
+
+replace_median <- aggregate(data_clean_activity $steps ~ data_clean_activity$interval, FUN=median)
+colnames(replace_median)<- c("interval", "steps")
+head(replace_median,10)
+
+```
+###### Calculation of mean
+
+```{r}
+
+#Calculation of mean
+replace_mean <- aggregate(data_clean_activity $steps ~ data_clean_activity $interval, FUN=mean)
+colnames(replace_mean)<- c("interval", "steps")
+head(replace_mean,10)
+
+
+```
+###### Filter NA
+
+```{r}
+data_for_clean <- Activity_Monitoring [is.na(Activity_Monitoring$steps),] # all outliers (read csv - line 47) 
+data_for_clean$date<- as.POSIXct(data_for_clean$date, format="%Y-%m-%d") 
+data_for_clean<- data_for_clean[order(data_for_clean$interval) ,]
+
+str(data_for_clean)
+
+
+```
+###### Replace NA by median
+
+```{r}
+
+data_clean_median<-data_for_clean
+m=nrow(data_clean_median) #  registros for clean
+n=nrow(replace_median) # median each intervals  
+for(i in 1:m)  #1 ate nrow(data_for_clean) 
+       for(j in 1:n)  #1 ate nrow(replace_median)
+                 if (data_clean_median$interval[i]==replace_median$interval[j]) {
+                     data_clean_median$steps [i]= replace_median$steps[j]  
+                     break
+                }
+data_replace_median<-data_clean_median
+str(data_replace_median)
+
+
+
+
+
+```
+###### Replace NA by mean 
+
+```{r}
+
+data_clean_mean<-data_for_clean
+m=nrow(data_clean_mean) #  registros for clean
+n=nrow(replace_mean) # median each intervals  
+for(i in 1:m)  #1 ate nrow(data_for_clean_mean) 
+       for(j in 1:n)  #1 ate nrow(replace_median)
+                 if (data_clean_mean$interval[i]==replace_mean$interval[j]) {
+                     data_clean_mean$steps [i]= replace_mean$steps[j]  
+                     break
+                }
+data_replace_mean<-data_clean_mean
+str(data_replace_mean)
+
+
+
+
+
+```
+##### 7) Histograma com atributos  NA substuídos with media, before too test median
+
+###### Replace by  median
+```{r}
+
+data_clean_and_NA_replace_median<-rbind(data_clean_activity, data_replace_median)
+sum_steps_after_replace<-data_clean_and_NA_replace_median
+sum_steps_after_replace <- aggregate(sum_steps_after_replace$steps ~ sum_steps_after_replace$date, FUN=sum)
+colnames(sum_steps_after_replace)<- c("interval", "steps")
+sum_steps_after_replace <-sum_steps_after_replace[order(sum_steps_after_replace$steps),] # order
+head(sum_steps_after_replace,10)
+
+# histogram initial - line 73
+hist(sum_steps$steps, col="darkblue", border="black", xlab="Steps", main="Total Steps per Day")
+
+#mean BEST RESULT
+hist(sum_steps_after_replace$steps, col="red", border="black", xlab="Steps", main="Total Steps per Day") 
+
+```
+
+###### Replace by mean (best result)
+
+```{r}
+
+data_clean_and_NA_replace_mean<-rbind(data_clean_activity, data_replace_mean)
+sum_steps_after_replace<-data_clean_and_NA_replace_mean
+sum_steps_after_replace <- aggregate(sum_steps_after_replace$steps ~ sum_steps_after_replace$date, FUN=sum)
+colnames(sum_steps_after_replace)<- c("interval", "steps")
+sum_steps_after_replace <-sum_steps_after_replace[order(sum_steps_after_replace$steps),] # order
+head(sum_steps_after_replace,10)
+
+# histogram initial - line 73
+hist(sum_steps$steps, col="darkblue", border="black", xlab="Steps", main="Total Steps per Day")
+
+#mean BEST RESULT
+hist(sum_steps_after_replace$steps, col="red", border="black", xlab="Steps", main="Total Steps per Day") 
+
+
+
+
+```
+##### 8) Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+
+
+###### category: weekend or weekday: NA replaced media
+
+```{r}
+
+
+category_day<-data_clean_and_NA_replace_mean # data with NA replaced media
+
+category_day$date <- as.Date(category_day$date)
+category_day$days=weekdays(as.Date(category_day$date))
+
+
+#replace weekend and weekday
+category_day$days<- ifelse(category_day$days == "sabado" | category_day$days == "domingo", "weekend", "weekday")
+head(category_day,10)
+
+mean_category_day <- aggregate(category_day$steps ~ category_day$interval + category_day$days, FUN=mean, data=category_day)
+##mean_category_day<- as.POSIXct(mean_category_day$date, format="%Y-%m-%d") 
+colnames(mean_category_day)<- c("interval","days","steps")
+head(mean_category_day,10)
+
+library(lattice)
+xyplot(mean_category_day$steps ~ mean_category_day$interval | mean_category_day$days, data=mean_category_day, type="l",    main="Mean Steps per Interval Based on Type of Day",   ylab="Mean Number of Steps", xlab=" Daily Interval")
+
+```
+###### category: weekend or weekday: delete dataset with NA 
+
+```{r}
+
+category_day<-data_clean_activity # data without NA 
+
+category_day$date <- as.Date(category_day$date)
+category_day$days=weekdays(as.Date(category_day$date))
+
+
+#replace weekend and weekday
+category_day$days<- ifelse(category_day$days == "sabado" | category_day$days == "domingo", "weekend", "weekday")
+head(category_day,10)
+
+mean_category_day <- aggregate(category_day$steps ~ category_day$interval + category_day$days, FUN=mean, data=category_day)
+##mean_category_day<- as.POSIXct(mean_category_day$date, format="%Y-%m-%d") 
+colnames(mean_category_day)<- c("interval","days","steps")
+head(mean_category_day,10)
+
+library(lattice)
+xyplot(mean_category_day$steps ~ mean_category_day$interval | mean_category_day$days, data=mean_category_day, type="l",    main="Mean Steps per Interval Based on Type of Day",   ylab="Mean Number of Steps", xlab=" Daily Interval")
+
+```
+###### Conclusion item 8
+
+According to the graphs, on weekends the number of activities is greater when compared to the other group (weekday). This was observed in the data set where NAs were replaced by the mean and in the dataset where NAs were removed.
+
+
+
+
+
+
+
