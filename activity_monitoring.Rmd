@@ -326,6 +326,7 @@ library(lattice)
 xyplot(mean_category_day$steps ~ mean_category_day$interval | mean_category_day$days, data=mean_category_day, type="l",    main="Mean Steps per Interval Based on Type of Day",   ylab="Mean Number of Steps", xlab=" Daily Interval")
 
 ```
+
 ###### Conclusion item 8
 
 According to the graphs, on weekends the number of activities is greater when compared to the other group (weekday). This was observed in the data set where NAs were replaced by the mean and in the dataset where NAs were removed.
