@@ -214,6 +214,7 @@ str(data_replace_median)
 
 
 ```
+
 ###### Replace NA by mean 
 
 ```{r}
@@ -245,7 +246,7 @@ sum_steps_after_replace<-data_clean_and_NA_replace_median
 sum_steps_after_replace <- aggregate(sum_steps_after_replace$steps ~ sum_steps_after_replace$date, FUN=sum)
 colnames(sum_steps_after_replace)<- c("interval", "steps")
 sum_steps_after_replace <-sum_steps_after_replace[order(sum_steps_after_replace$steps),] # order
-head(sum_steps_after_replace,10)
+head(sum_steps_after_replace,12)
 
 # histogram initial - line 73
 hist(sum_steps$steps, col="darkblue", border="black", xlab="Steps", main="Total Steps per Day")
@@ -264,7 +265,7 @@ sum_steps_after_replace<-data_clean_and_NA_replace_mean
 sum_steps_after_replace <- aggregate(sum_steps_after_replace$steps ~ sum_steps_after_replace$date, FUN=sum)
 colnames(sum_steps_after_replace)<- c("interval", "steps")
 sum_steps_after_replace <-sum_steps_after_replace[order(sum_steps_after_replace$steps),] # order
-head(sum_steps_after_replace,10)
+head(sum_steps_after_replace,12)
 
 # histogram initial - line 73
 hist(sum_steps$steps, col="darkblue", border="black", xlab="Steps", main="Total Steps per Day")
@@ -326,6 +327,7 @@ library(lattice)
 xyplot(mean_category_day$steps ~ mean_category_day$interval | mean_category_day$days, data=mean_category_day, type="l",    main="Mean Steps per Interval Based on Type of Day",   ylab="Mean Number of Steps", xlab=" Daily Interval")
 
 ```
+
 
 ###### Conclusion item 8
 
